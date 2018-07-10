@@ -4,7 +4,12 @@ const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'coolsecretkey';
-const { ensureCorrectUser, ensureLoggedIn } = require('../middleware');
+const {
+  ensureCorrectUser,
+  ensureLoggedIn,
+  checkJobCreator,
+  checkIfCompany
+} = require('../middleware');
 
 router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
@@ -24,7 +29,7 @@ router.get('/:id', ensureLoggedIn, async (req, res, next) => {
   }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', checkIfCompany, async (req, res, next) => {
   try {
     const data = await db.query(
       'INSERT INTO jobs (title, salary, equity, company_id) VALUES ($1,$2,$3,$4) RETURNING *',
@@ -36,7 +41,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-router.patch('/:id', async (req, res, next) => {
+router.patch('/:id', checkJobCreator, async (req, res, next) => {
   try {
     const data = await db.query(
       'UPDATE jobs SET title=($1), salary=($2), equity=($3), company_id=($4) WHERE id=($5) RETURNING *',
@@ -54,7 +59,7 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', checkJobCreator, async (req, res, next) => {
   try {
     const data = await db.query('DELETE FROM jobs WHERE id=$1 RETURNING *', [
       req.params.id

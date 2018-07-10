@@ -34,7 +34,9 @@ router.post('/auth', async (req, res, next) => {
     } else {
       return res.json({ message: 'Invalid PW' });
     }
-  } catch (e) {}
+  } catch (e) {
+    return next(e);
+  }
 });
 
 router.post('/', async (req, res, next) => {
