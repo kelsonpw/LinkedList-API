@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const db = require('../db/index');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = 'coolsecretkey';
+const { ensureCorrectUser, ensureLoggedIn } = require('../middleware');
 
-router.get('/', async (req, res, next) => {
+router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
     const data = db.query('SELECT * FROM jobs');
     return res.json(data.rows);
@@ -11,7 +15,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', ensureLoggedIn, async (req, res, next) => {
   try {
     const data = db.query('SELECT * FROM jobs WHERE id=$1', [req.params.id]);
     return res.json(data.rows[0]);
