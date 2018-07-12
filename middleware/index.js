@@ -73,7 +73,7 @@ async function ensureIfApplied(req, res, next) {
       return next();
     } else {
       return res.status(401).json({
-        message: 'Unauthorized'
+        message: 'You have not applied for this job'
       });
     }
   } catch (err) {
