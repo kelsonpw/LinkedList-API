@@ -99,6 +99,17 @@ router.post('/:id/apply', checkIfUser, async (req, res, next) => {
       username
     ])).rows[0].id;
 
+    const appData = await db.query(
+      'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2 LIMIT 1',
+      [req.params.id, user_id]
+    );
+
+    if (appData.rows.length > 0) {
+      return res.status(401).json({
+        message: 'You have already applied for this job'
+      });
+    }
+
     await db.query(
       'INSERT INTO jobs_users (user_id, job_id ) VALUES ($1, $2)',
       [user_id, req.params.id]
