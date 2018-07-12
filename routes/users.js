@@ -30,7 +30,7 @@ router.post('/', async (req, res, next) => {
         hashedPass,
         req.body.first_name,
         req.body.last_name,
-        req.body.email,
+        req.body.email, 
         req.body.photo
       ]
     );
