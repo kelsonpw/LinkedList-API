@@ -27,27 +27,25 @@ function ensureCorrectUser(req, res, next) {
     }
     return next();
   } catch (err) {
-    return res.status(401).json({
-      message: 'Unauthorized'
-    });
+    return next(err);
   }
 }
 
-// function ensureCorrectCompany(req, res, next) {
-//   try {
-//     const token = req.headesrs.authorization;
-//     const decodedToken = jwt.verify(token, SECRET_KEY);
-//     if (decodedToken.company_id === +req.params.id) {
-//       return next();
-//     } else {
-//       return res.status(401).json({
-//         message: 'Unauthorized'
-//       });
-//     }
-//   } catch (err) {
-//     return res.status(401).json({ message: 'unauthorized company' });
-//   }
-// }
+function ensureCorrectCompany(req, res, next) {
+  try {
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    if (decodedToken.handle === req.params.handle) {
+      return next();
+    } else {
+      return res.status(401).json({
+        message: 'Unauthorized'
+      });
+    }
+  } catch (err) {
+    return next(err);
+  }
+}
 
 // function checkIfCompany(req, res, next) {
 //   try {
@@ -87,8 +85,8 @@ function ensureCorrectUser(req, res, next) {
 
 module.exports = {
   ensureCorrectUser,
-  ensureLoggedIn
-  // ensureCorrectCompany,
+  ensureLoggedIn,
+  ensureCorrectCompany
   // checkIfCompany,
   // checkJobCreator
 };
