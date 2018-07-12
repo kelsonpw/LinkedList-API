@@ -41,7 +41,7 @@ router.post('/', async (req, res, next) => {
     return res.json(data.rows[0]);
   } catch (err) {
     if (err.code === '23505')
-      return next(`The handle ${req.body.handle} already exists.`);
+      return next(`The handle and email must not be takens`);
     return next(err);
   }
 });

@@ -47,23 +47,21 @@ function ensureCorrectCompany(req, res, next) {
   }
 }
 
-// function checkIfCompany(req, res, next) {
-//   try {
-//     const token = req.headers.authorization;
-//     const decodedToken = jwt.verify(token, SECRET_KEY);
-//     if (decodedToken.company_id) {
-//       return next();
-//     } else {
-//       return res.status(401).json({
-//         message: 'Unauthorized to Post Job'
-//       });
-//     }
-//   } catch (err) {
-//     return res.status(401).json({
-//       message: 'Unauthorized to Post Job'
-//     });
-//   }
-// }
+function checkIfCompany(req, res, next) {
+  try {
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    if (decodedToken.handle) {
+      return next();
+    } else {
+      return res.status(401).json({
+        message: 'Unauthorized to Post Job'
+      });
+    }
+  } catch (err) {
+    return next(err);
+  }
+}
 
 // async function checkJobCreator(req, res, next) {
 //   try {
@@ -86,7 +84,7 @@ function ensureCorrectCompany(req, res, next) {
 module.exports = {
   ensureCorrectUser,
   ensureLoggedIn,
-  ensureCorrectCompany
-  // checkIfCompany,
+  ensureCorrectCompany,
+  checkIfCompany
   // checkJobCreator
 };

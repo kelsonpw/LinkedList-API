@@ -11,7 +11,7 @@ const SECRET_KEY = 'coolsecretkey';
 
 const usersRoutes = require('./routes/users');
 const companiesRoutes = require('./routes/companies');
-// const jobsRoutes = require('./routes/jobs');
+const jobsRoutes = require('./routes/jobs');
 
 // const authHandler = require('./routes/auth');
 // app.post('/user-auth', authHandler.userAuthHandler);
@@ -22,7 +22,7 @@ app.use(bodyParser.json());
 app.use(morgan('dev'));
 app.use('/users', usersRoutes);
 app.use('/companies', companiesRoutes);
-// app.use('/jobs', jobsRoutes);
+app.use('/jobs', jobsRoutes);
 // app.use(cors());
 
 app.post('/user-auth', async (req, res, next) => {
