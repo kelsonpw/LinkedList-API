@@ -1,7 +1,9 @@
-const db = require('../db/index');
+const db = require('./db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const SECRET_KEY = 'coolsecretkey';
+const { SECRET_KEY } = require('./config');
+
+//const key = require('./index')
 
 async function userAuthHandler(req, res, next) {
   try {
@@ -29,6 +31,7 @@ async function userAuthHandler(req, res, next) {
 
 async function companyAuthHandler(req, res, next) {
   try {
+    console.log(req.body);
     const company = await db.query(
       'SELECT * FROM companies WHERE handle=$1 LIMIT 1',
       [req.body.handle]

@@ -8,7 +8,9 @@ const {
   ensureCorrectUser,
   ensureLoggedIn,
   checkIfCompany,
-  checkJobCreator
+  checkJobCreator,
+  checkIfUser,
+  ensureIfApplied
 } = require('../middleware');
 
 router.get('/', ensureLoggedIn, async (req, res, next) => {
@@ -23,6 +25,19 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
 
 router.post('/', checkIfCompany, async (req, res, next) => {
   try {
+    // const validation = validate(req.body, jobNewSchema);
+    // if (!validation.valid) {
+    //   return next(
+    //     new APIError(
+    //       400,
+    //       'Bad Request',
+    //       validation.errors.map(e => e.stack).join('. ')
+    //     )
+    //   );
+    // }
+
+    // const { title, salary, equity, companyID } = validation;
+
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const handle = decodedToken.handle;
@@ -69,6 +84,40 @@ router.delete('/:id', checkJobCreator, async (req, res, next) => {
       req.params.id
     ]);
     return res.json(data.rows[0]);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.post('/:id/apply', checkIfUser, async (req, res, next) => {
+  try {
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    const username = decodedToken.username;
+
+    const user_id = (await db.query('SELECT id FROM users WHERE username=$1', [
+      username
+    ])).rows[0].id;
+
+    await db.query(
+      'INSERT INTO jobs_users (user_id, job_id ) VALUES ($1, $2)',
+      [user_id, req.params.id]
+    );
+
+    return res.json({ message: 'Successfully applied for job' });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.delete('/:id/apply', ensureIfApplied, async (req, res, next) => {
+  try {
+    await db.query('DELETE FROM jobs_users WHERE job_id = $1 AND user_id=$2', [
+      req.params.id,
+      req.user_id
+    ]);
+
+    return res.json({ message: 'Successfully deleted a job application' });
   } catch (err) {
     return next(err);
   }

@@ -22,7 +22,7 @@ function ensureCorrectUser(req, res, next) {
       return next();
     } else {
       return res.json({
-        message: 'You must the account owner to update the profile.'
+        message: 'You must be a user to apply for the job.'
       });
     }
     return next();
@@ -47,11 +47,61 @@ function ensureCorrectCompany(req, res, next) {
   }
 }
 
+async function ensureIfApplied(req, res, next) {
+  try {
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    // const jobData = await db.query('SELECT * FROM jobs WHERE id=$1', [
+    //   req.params.id
+    // ]);
+
+    // if (decodedToken.handle === jobData.rows[0].company) {
+    //   return next();
+    // }
+
+    const user_id = (await db.query('SELECT id FROM users WHERE username=$1', [
+      decodedToken.username
+    ])).rows[0].id;
+
+    const appData = await db.query(
+      'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2 LIMIT 1',
+      [req.params.id, user_id]
+    );
+
+    if (appData.rows.length > 0) {
+      req.user_id = user_id;
+      return next();
+    } else {
+      return res.status(401).json({
+        message: 'Unauthorized'
+      });
+    }
+  } catch (err) {
+    return next(err);
+  }
+}
+
 function checkIfCompany(req, res, next) {
   try {
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, SECRET_KEY);
     if (decodedToken.handle) {
+      return next();
+    } else {
+      return res.status(401).json({
+        message: 'Unauthorized to Post Job'
+      });
+    }
+  } catch (err) {
+    return next(err);
+  }
+}
+
+function checkIfUser(req, res, next) {
+  try {
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    if (decodedToken.username) {
       return next();
     } else {
       return res.status(401).json({
@@ -83,13 +133,18 @@ async function checkJobCreator(req, res, next) {
       });
     }
   } catch (err) {
-    return res.status(404).json({
-      error: {
-        status: 404,
-        title: 'Not Found',
-        message: 'Record with that ID was not found.'
-      }
-    });
+    console.log(err.code);
+    if (err.code === '23505') {
+      return res.status(404).json({
+        error: {
+          status: 404,
+          title: 'Not Found',
+          message: 'Record with that ID was not found.'
+        }
+      });
+    }
+
+    return next(err);
   }
 }
 
@@ -98,5 +153,7 @@ module.exports = {
   ensureLoggedIn,
   ensureCorrectCompany,
   checkIfCompany,
-  checkJobCreator
+  checkJobCreator,
+  checkIfUser,
+  ensureIfApplied
 };

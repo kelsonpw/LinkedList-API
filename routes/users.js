@@ -57,7 +57,7 @@ router.post('/user-auth', async (req, res, next) => {
       user.rows[0].password
     );
     if (checkPassword) {
-      const token = jwt.sign({ user_id: user.rows[0].id }, SECRET_KEY);
+      const token = jwt.sign({ username: user.rows[0].username }, SECRET_KEY);
       return res.json({ token });
     } else {
       return res.json({ message: 'Invalid Password' });
