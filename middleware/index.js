@@ -63,28 +63,40 @@ function checkIfCompany(req, res, next) {
   }
 }
 
-// async function checkJobCreator(req, res, next) {
-//   try {
-//     const token = req.headers.authorization;
-//     const decodedToken = jwt.verify(token, SECRET_KEY);
-//     const job = await db.query('SELECT * FROM jobs WHERE id=$1', [
-//       req.params.id
-//     ]);
-//     const jobCompany = job.rows[0].company_id;
-//     if (decodedToken.company_id === jobCompany) {
-//       return next();
-//     } else {
-//       return res.status(401).json({ message: 'not the correct company' });
-//     }
-//   } catch (err) {
-//     return next(err);
-//   }
-// }
+async function checkJobCreator(req, res, next) {
+  try {
+    const token = req.headers.authorization;
+    const decodedToken = jwt.verify(token, SECRET_KEY);
+    const job = await db.query('SELECT * FROM jobs WHERE id=$1', [
+      req.params.id
+    ]);
+    const companyHandle = job.rows[0].company;
+    if (decodedToken.handle === companyHandle) {
+      return next();
+    } else {
+      return res.status(401).json({
+        error: {
+          status: 401,
+          title: 'Unauthorized',
+          message: 'You need to authenticate before accessing this resource.'
+        }
+      });
+    }
+  } catch (err) {
+    return res.status(404).json({
+      error: {
+        status: 404,
+        title: 'Not Found',
+        message: 'Record with that ID was not found.'
+      }
+    });
+  }
+}
 
 module.exports = {
   ensureCorrectUser,
   ensureLoggedIn,
   ensureCorrectCompany,
-  checkIfCompany
-  // checkJobCreator
+  checkIfCompany,
+  checkJobCreator
 };

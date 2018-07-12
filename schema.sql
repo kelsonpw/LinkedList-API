@@ -27,7 +27,7 @@ CREATE TABLE users (
 CREATE TABLE jobs (
     id SERIAL PRIMARY KEY,
     title TEXT NOT NULL,
-    company INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+    company TEXT NOT NULL REFERENCES companies (handle) ON UPDATE CASCADE ON DELETE CASCADE,
     salary TEXT NOT NULL,
     equity FLOAT
 );
@@ -42,8 +42,8 @@ INSERT INTO companies (name, email, handle, password) VALUES ('rithm', 'kelson@w
 INSERT INTO companies (name, email, handle, password) VALUES ('hooli', 'hoolo@warner.com','hooli','password');
 INSERT INTO users (first_name, last_name, username, email, password, current_company) VALUES ('kelson','warner','kelson','kelson@warner.com','password','rithm');
 INSERT INTO users (first_name, last_name, username, email, password, current_company) VALUES ('jimmy','rithm','jimmy','jimmy@rithm.com','password','hooli');
-INSERT INTO jobs (title, company, salary, equity) VALUES ('Dev', 1,'$100,000', 0.03);
-INSERT INTO jobs (title, company, salary, equity) VALUES ('Dev 2', 2,'$200,000',0.25);
+INSERT INTO jobs (title, company, salary, equity) VALUES ('Dev', 'hooli','$100,000', 0.03);
+INSERT INTO jobs (title, company, salary, equity) VALUES ('Dev 2', 'rithm','$200,000',0.25);
 INSERT INTO jobs_users (user_id, job_id) VALUES (1,1);
 INSERT INTO jobs_users (user_id, job_id) VALUES (1,2);
 INSERT INTO jobs_users (user_id, job_id) VALUES (2,1);
