@@ -89,46 +89,48 @@ router.delete('/:id', checkJobCreator, async (req, res, next) => {
   }
 });
 
-router.post('/:id/apply', checkIfUser, async (req, res, next) => {
-  try {
-    const token = req.headers.authorization;
-    const decodedToken = jwt.verify(token, SECRET_KEY);
-    const username = decodedToken.username;
+router.post(
+  '/:id/apply',
+  checkIfUser,
+  ensureIfApplied,
+  async (req, res, next) => {
+    try {
+      const token = req.headers.authorization;
+      const decodedToken = jwt.verify(token, SECRET_KEY);
 
-    const user_id = (await db.query('SELECT id FROM users WHERE username=$1', [
-      username
-    ])).rows[0].id;
-
-    const appData = await db.query(
-      'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2 LIMIT 1',
-      [req.params.id, user_id]
-    );
-
-    if (appData.rows.length > 0) {
-      return res.status(401).json({
-        message: 'You have already applied for this job'
-      });
+      const user_id = req.user_id;
+      appData = req.appData;
+      if (appData.rows.length < 1) {
+        await db.query(
+          'INSERT INTO jobs_users (user_id, job_id ) VALUES ($1, $2)',
+          [user_id, req.params.id]
+        );
+        return res.json({ message: 'Successfully applied for job' });
+      } else {
+        return res.json({
+          message: 'You have already applied for this job.'
+        });
+      }
+    } catch (err) {
+      return next(err);
     }
-
-    await db.query(
-      'INSERT INTO jobs_users (user_id, job_id ) VALUES ($1, $2)',
-      [user_id, req.params.id]
-    );
-
-    return res.json({ message: 'Successfully applied for job' });
-  } catch (err) {
-    return next(err);
   }
-});
+);
 
 router.delete('/:id/apply', ensureIfApplied, async (req, res, next) => {
   try {
-    await db.query('DELETE FROM jobs_users WHERE job_id = $1 AND user_id=$2', [
-      req.params.id,
-      req.user_id
-    ]);
-
-    return res.json({ message: 'Successfully deleted a job application' });
+    const appData = req.appData;
+    if (appData.rows.length > 0) {
+      await db.query(
+        'DELETE FROM jobs_users WHERE job_id = $1 AND user_id=$2',
+        [req.params.id, req.user_id]
+      );
+      return res.json({ message: 'Successfully deleted a job application' });
+    } else {
+      return res.json({
+        message: 'You need to authenticate before accessing this resource.'
+      });
+    }
   } catch (err) {
     return next(err);
   }

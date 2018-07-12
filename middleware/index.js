@@ -22,7 +22,7 @@ function ensureCorrectUser(req, res, next) {
       return next();
     } else {
       return res.json({
-        message: 'You must be a user to apply for the job.'
+        message: 'You are not the valid user for this operation'
       });
     }
     return next();
@@ -68,12 +68,13 @@ async function ensureIfApplied(req, res, next) {
       [req.params.id, user_id]
     );
 
-    if (appData.rows.length > 0) {
+    if (appData) {
       req.user_id = user_id;
+      req.appData = appData;
       return next();
     } else {
       return res.status(401).json({
-        message: 'You have not applied for this job'
+        message: 'Unauthorized'
       });
     }
   } catch (err) {
