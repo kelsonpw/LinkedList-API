@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const request = require('supertest');
 const app = require('../index');
 const bcrypt = require('bcrypt');
+const { SECRET_KEY } = require('../config');
 
 // describe('GET /users', () => {
 //   test('It should response with a list of students', async () => {

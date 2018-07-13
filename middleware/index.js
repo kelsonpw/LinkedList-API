@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'coolsecretkey';
 const db = require('../db/index');
+const APIError = require('../APIError');
 
 function ensureLoggedIn(req, res, next) {
   try {
@@ -119,6 +120,8 @@ async function checkJobCreator(req, res, next) {
     const job = await db.query('SELECT * FROM jobs WHERE id=$1', [
       req.params.id
     ]);
+    if (job.rows.length === 0)
+      return next(new APIError(404, 'Job does not exist.', 'Invalid request.'));
     const companyHandle = job.rows[0].company;
     if (decodedToken.handle === companyHandle) {
       return next();
@@ -142,7 +145,6 @@ async function checkJobCreator(req, res, next) {
         }
       });
     }
-
     return next(err);
   }
 }

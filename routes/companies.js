@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const APIError = require('../APIError');
 const companySchema = require('../companySchema');
 const { validate } = require('jsonschema');
-const SECRET_KEY = 'coolsecretkey';
+const { SECRET_KEY } = require('../config');
 const {
   ensureCorrectUser,
   ensureLoggedIn,

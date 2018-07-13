@@ -85,6 +85,13 @@ beforeEach(async () => {
     });
   auth.company_token = companyResponse.body.token;
   auth.handle = jwt.decode(auth.company_token).handle;
+
+  const decodedToken = jwt.verify(auth.company_token, SECRET_KEY);
+  const companyHandle = decodedToken.handle;
+  await db.query(
+    "INSERT INTO jobs (title, salary, equity, company) VALUES ('developer','$100,000', 0.25, $1)",
+    [companyHandle]
+  );
 });
 
 afterEach(async () => {
@@ -101,84 +108,110 @@ afterAll(async () => {
   db.end();
 });
 
-describe('GET /users', () => {
-  test('Return a list of users', async () => {
+describe('GET /jobs as a user', () => {
+  test('Return a list of jobs', async () => {
     const response = await request(app)
-      .get('/users')
+      .get('/jobs')
       .set('authorization', auth.token);
     expect(response.body.length).toBe(1);
     expect(response.statusCode).toBe(200);
   });
 });
 
-describe('GET /users without AUTH', () => {
+describe('GET /jobs as a company', () => {
+  test('Return a list of jobs', async () => {
+    const response = await request(app)
+      .get('/jobs')
+      .set('authorization', auth.company_token);
+    expect(response.body.length).toBe(1);
+    expect(response.statusCode).toBe(200);
+  });
+});
+
+describe('GET /jobs without AUTH', () => {
   test('Requires logging in', async () => {
-    const response = await request(app).get('/users');
+    const response = await request(app).get('/jobs');
     expect(response.statusCode).toBe(401);
     expect(response.body.message).toBe('Unauthorized');
   });
 });
 
-describe('POST /users', () => {
-  test('It responds with a newly created user', async () => {
+describe('POST /jobs', () => {
+  test('It responds with a newly created job', async () => {
     const response = await request(app)
-      .post('/users')
+      .post('/jobs')
+      .set('authorization', auth.company_token)
       .send({
-        username: 'Testguy',
-        email: 'testguy@gmail.com',
-        password: 'password'
+        title: 'Developer2',
+        salary: '$200,000',
+        equity: 0.25,
+        company: 'testcompany'
       });
     expect(response.body).toHaveProperty('id');
-    expect(response.body.email).toBe('testguy@gmail.com');
+    expect(response.body.title).toBe('Developer2');
     expect(response.statusCode).toBe(200);
     const res = await request(app)
-      .get('/users')
-      .set('authorization', auth.token);
+      .get('/jobs')
+      .set('authorization', auth.company_token);
     expect(res.body.length).toBe(2);
   });
 });
 
-describe('GET /users/:username', () => {
-  test('It responds with a single user', async () => {
+describe('GET /jobs/:id', () => {
+  test('It responds with a single job', async () => {
+    const decodedToken = jwt.verify(auth.company_token, SECRET_KEY);
+    const companyHandle = decodedToken.handle;
+    let jobId = (await db.query('SELECT * FROM jobs WHERE company=$1 LIMIT 1', [
+      companyHandle
+    ])).rows[0].id;
     const response = await request(app)
-      .get('/users/test')
-      .set('authorization', auth.token);
+      .get(`/jobs/${jobId}`)
+      .set('authorization', auth.company_token);
     expect(response.body).toHaveProperty('id');
     expect(response.statusCode).toBe(200);
   });
 });
 
-describe('PATCH /users/:username', () => {
-  test('It responds with an updated user', async () => {
-    const updatedUser = await request(app)
-      .patch('/users/test')
-      .set('authorization', auth.token)
+describe('PATCH /jobs/:id', () => {
+  test('It responds with an updated job', async () => {
+    const decodedToken = jwt.verify(auth.company_token, SECRET_KEY);
+    const companyHandle = decodedToken.handle;
+    let jobId = (await db.query('SELECT * FROM jobs WHERE company=$1 LIMIT 1', [
+      companyHandle
+    ])).rows[0].id;
+    const updatedJob = await request(app)
+      .patch(`/jobs/${jobId}`)
+      .set('authorization', auth.company_token)
       .send({
-        first_name: 'Jimmy',
-        last_name: 'Kelson',
-        username: 'test',
-        email: 'newemail@gmail.com',
-        password: 'secret',
-        photo: 'www.google.com'
+        title: 'Developer3',
+        salary: '$1,000,000',
+        equity: 0.999
       });
-    expect(updatedUser.body.email).toBe('newemail@gmail.com');
-    expect(updatedUser.body).toHaveProperty('id');
-    expect(updatedUser.statusCode).toBe(200);
+    console.log(updatedJob.body);
+    expect(updatedJob.body.title).toBe('Developer3');
+    expect(updatedJob.body).toHaveProperty('id');
+    expect(updatedJob.statusCode).toBe(200);
   });
+});
 
-  describe('DELETE /users/:username', () => {
-    test('It deletes the user properly.', async () => {
-      const deletedUser = await request(app)
-        .delete('/users/test')
-        .set('authorization', auth.token);
-      expect(deletedUser.statusCode).toBe(200);
-      expect(deletedUser.body.username).toBe('test');
-      //console.log(deletedUser.body);
-      const secondDelete = await request(app)
-        .delete('/users/test')
-        .set('authorization', auth.token);
-      expect(secondDelete.body.title).toBe('This is not a valid user');
-      //console.log(secondDelete.body);
-    });
+describe('DELETE /jobs/:id', () => {
+  test('It deletes the job properly.', async () => {
+    const decodedToken = jwt.verify(auth.company_token, SECRET_KEY);
+    const companyHandle = decodedToken.handle;
+    const jobId = (await db.query(
+      'SELECT * FROM jobs WHERE company=$1 LIMIT 1',
+      [companyHandle]
+    )).rows[0].id;
+    const deletedJob = await request(app)
+      .delete(`/jobs/${jobId}`)
+      .set('authorization', auth.company_token);
+    expect(deletedJob.statusCode).toBe(200);
+    expect(deletedJob.body.company).toBe(companyHandle);
+    const secondDelete = await request(app)
+      .delete(`/jobs/${jobId}`)
+      .set('authorization', auth.company_token);
+    console.log('ERROR=>', secondDelete.error, 'enderror');
+    expect(secondDelete.body.title).toBe('Job does not exist.');
+    //console.log(secondDelete.body);
   });
 });

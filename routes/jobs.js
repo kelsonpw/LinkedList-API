@@ -3,9 +3,8 @@ const router = express.Router();
 const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { validate } = require('jsonschema');
 const APIError = require('../APIError.js');
-const SECRET_KEY = 'coolsecretkey';
+const { SECRET_KEY } = require('../config');
 const {
   ensureCorrectUser,
   ensureLoggedIn,
@@ -25,18 +24,20 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
 });
 
 router.post('/', checkIfCompany, async (req, res, next) => {
-  const result = validate(req.body, jobSchema);
-  console.log(result);
-  if (!result.valid) {
-    return next(
-      new APIError(
-        400,
-        'You made an error creating a job:',
-        result.errors.map(e => e.stack).join('. ')
-      )
-    );
-  }
   try {
+    // const validation = validate(req.body, jobNewSchema);
+    // if (!validation.valid) {
+    //   return next(
+    //     new APIError(
+    //       400,
+    //       'Bad Request',
+    //       validation.errors.map(e => e.stack).join('. ')
+    //     )
+    //   );
+    // }
+
+    // const { title, salary, equity, companyID } = validation;
+
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const handle = decodedToken.handle;
@@ -46,7 +47,6 @@ router.post('/', checkIfCompany, async (req, res, next) => {
     );
     return res.json(data.rows[0]);
   } catch (err) {
-    err.status(401);
     return next(err);
   }
 });
@@ -64,35 +64,16 @@ router.get('/:id', ensureLoggedIn, async (req, res, next) => {
 });
 
 router.patch('/:id', checkJobCreator, async (req, res, next) => {
-  const result = validate(req.body, jobSchema);
-  console.log(result);
-  if (!result.valid) {
-    return next(
-      new APIError(
-        400,
-        'You made an error patching a job:',
-        result.errors.map(e => e.stack).join('. ')
-      )
-    );
-  }
-
   try {
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, SECRET_KEY);
     const handle = decodedToken.handle;
-  } catch (err) {
-    err.status(401);
-    return next(err);
-  }
-
-  try {
     const data = await db.query(
       'UPDATE jobs SET title=($1), salary=($2), equity=($3), company=($4) WHERE id=($5) RETURNING *',
       [req.body.title, req.body.salary, req.body.equity, handle, req.params.id]
     );
     return res.json(data.rows[0]);
   } catch (err) {
-    err.status(404);
     return next(err);
   }
 });
@@ -104,7 +85,14 @@ router.delete('/:id', checkJobCreator, async (req, res, next) => {
     ]);
     return res.json(data.rows[0]);
   } catch (err) {
-    return next(err);
+    console.log('NOT A 500');
+    return next(
+      new APIError(
+        404,
+        'This is not a valid job',
+        'Please refresh and try again.'
+      )
+    );
   }
 });
 
