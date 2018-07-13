@@ -29,7 +29,7 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   const result = validate(req.body, userSchema);
-  console.log(result);
+
   if (!result.valid) {
     return next(
       new APIError(
@@ -90,7 +90,6 @@ router.get('/:username', ensureLoggedIn, async (req, res, next) => {
 
 router.patch('/:username', ensureCorrectUser, async (req, res, next) => {
   const result = validate(req.body, userSchema);
-  console.log(result);
   if (!result.valid) {
     return next(
       new APIError(
@@ -139,7 +138,6 @@ router.delete('/:username', ensureCorrectUser, async (req, res, next) => {
       'DELETE FROM users WHERE username=$1 RETURNING *',
       [req.params.username]
     );
-    console.log(data);
     const jobs = await db.query('SELECT * FROM jobs_users WHERE user_id=$1', [
       data.rows[0].id
     ]);
