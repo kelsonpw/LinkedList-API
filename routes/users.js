@@ -6,6 +6,8 @@ const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'coolsecretkey';
 const APIError = require('../APIError');
 const { ensureCorrectUser, ensureLoggedIn } = require('../middleware');
+const { validate } = require('jsonschema');
+const userSchema = require('../userSchema.json');
 // const { applications } = require('../functions');
 
 router.get('/', ensureLoggedIn, async (req, res, next) => {
@@ -27,8 +29,18 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    if (req.body.password.length > 55)
-      return next(new Error('Password is too long'));
+    const result = validate(req.body, userSchema);
+    console.log(result);
+    if (!result.valid) {
+      return next(
+        new APIError(
+          400,
+          'You made an error:',
+          result.errors.map(e => e.stack).join('. ')
+        )
+      );
+    }
+
     const hashedPass = await bcrypt.hash(req.body.password, 10);
     const company = await db.query(
       'SELECT * FROM companies WHERE handle=$1 LIMIT 1',
