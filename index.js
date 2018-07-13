@@ -106,8 +106,6 @@ app.use((error, request, response, next) => {
   return response.status(error.status).json(error);
 });
 
-app.listen(PORT, () => {
-  console.log(`server starting on port ${PORT}`);
-});
+module.exports = app;
 
 // module.exports = key;
