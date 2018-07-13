@@ -1,0 +1,35 @@
+{
+  "$id": "http://example.com/example.json",
+  "type": "object",
+  "properties": {
+    "title": {
+      "$id": "/properties/title",
+      "type": "string",
+      "title": "The Title Schema ",
+      "default": "",
+      "examples": ["Dev"]
+    },
+    "company": {
+      "$id": "/properties/company",
+      "type": "string",
+      "title": "The Company Schema ",
+      "default": "",
+      "examples": ["hooli"]
+    },
+    "salary": {
+      "$id": "/properties/salary",
+      "type": "string",
+      "title": "The Salary Schema ",
+      "default": "",
+      "examples": ["$100,000"]
+    },
+    "equity": {
+      "$id": "/properties/equity",
+      "type": "number",
+      "title": "The Equity Schema ",
+      "default": 0,
+      "examples": [0.029999999329447746]
+    }
+  },
+  "required": ["title", "company", "salary"]
+}
