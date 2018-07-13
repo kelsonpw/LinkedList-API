@@ -52,33 +52,38 @@ async function ensureIfApplied(req, res, next) {
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, SECRET_KEY);
     // const jobData = await db.query('SELECT * FROM jobs WHERE id=$1', [
-    //   req.params.id
-    // ]);
-
-    // if (decodedToken.handle === jobData.rows[0].company) {
-    //   return next();
-    // }
-
-    const user_id = (await db.query('SELECT id FROM users WHERE username=$1', [
-      decodedToken.username
-    ])).rows[0].id;
-
-    const appData = await db.query(
-      'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2 LIMIT 1',
-      [req.params.id, user_id]
-    );
-
-    if (appData) {
-      req.user_id = user_id;
-      req.appData = appData;
-      return next();
-    } else {
-      return res.status(401).json({
-        message: 'Unauthorized'
-      });
-    }
   } catch (err) {
+    // you probably got a 401 "auth" error
     return next(err);
+  }
+  //   req.params.id
+  // ]);
+
+  // if (decodedToken.handle === jobData.rows[0].company) {
+  //   return next();
+  // }
+
+  const user_id = (await db.query('SELECT id FROM users WHERE username=$1', [
+    decodedToken.username
+  ])).rows[0].id;
+
+  const appData = await db.query(
+    'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2 LIMIT 1',
+    [req.params.id, user_id]
+  );
+
+  if (!result.rows[0]) {
+    return next(new APIError(404));
+  }
+
+  if (appData) {
+    req.user_id = user_id;
+    req.appData = appData;
+    return next();
+  } else {
+    return res.status(401).json({
+      message: 'Unauthorized'
+    });
   }
 }
 
@@ -86,6 +91,7 @@ function checkIfCompany(req, res, next) {
   try {
     const token = req.headers.authorization;
     const decodedToken = jwt.verify(token, SECRET_KEY);
+
     if (decodedToken.handle) {
       return next();
     } else {

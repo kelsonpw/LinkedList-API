@@ -126,12 +126,16 @@ router.post(
 router.delete('/:id/apply', ensureIfApplied, async (req, res, next) => {
   try {
     const appData = req.appData;
+    // query the job
+    //  if not found, 404
+    // else
+
     if (appData.rows.length > 0) {
       await db.query(
         'DELETE FROM jobs_users WHERE job_id = $1 AND user_id=$2',
         [req.params.id, req.user_id]
       );
-      return res.json({ message: 'Successfully deleted a job application' });
+      return next(new APiERoor());
     } else {
       return next(
         new APIError(404, 'Not Found', 'Record with that ID was not found.')
