@@ -32,7 +32,7 @@ async function userAuthHandler(req, res, next) {
 
 async function companyAuthHandler(req, res, next) {
   try {
-    console.log(req.body);
+    //console.log(req.body);
     const company = await db.query(
       'SELECT * FROM companies WHERE handle=$1 LIMIT 1',
       [req.body.handle]

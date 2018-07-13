@@ -100,6 +100,7 @@ router.get('/:handle', ensureLoggedIn, async (req, res, next) => {
 });
 
 router.patch('/:handle', ensureCorrectCompany, async (req, res, next) => {
+  req.body.handle = req.params.handle;
   const result = validate(req.body, companySchema);
   console.log(result);
   if (!result.valid) {
@@ -166,7 +167,13 @@ router.delete('/:handle', ensureCorrectCompany, async (req, res, next) => {
     company.rows[0].jobs = jobs.rows.map(v => v.id);
     return res.json(company.rows[0]);
   } catch (err) {
-    return next(err);
+    return next(
+      new APIError(
+        404,
+        'This is not a valid company',
+        'Please login for more information.'
+      )
+    );
   }
 });
 

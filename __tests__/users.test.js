@@ -172,9 +172,12 @@ describe('PATCH /users/:username', () => {
         .set('authorization', auth.token);
       expect(deletedUser.statusCode).toBe(200);
       expect(deletedUser.body.username).toBe('test');
-      // const secondDelete = await request(app)
-      //   .delete('/users/test')
-      //   .set('authorization', auth.token);
+      //console.log(deletedUser.body);
+      const secondDelete = await request(app)
+        .delete('/users/test')
+        .set('authorization', auth.token);
+      expect(secondDelete.body.title).toBe('This is not a valid user');
+      //console.log(secondDelete.body);
     });
   });
 });
