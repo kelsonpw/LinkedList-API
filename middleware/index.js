@@ -105,9 +105,7 @@ function checkIfUser(req, res, next) {
     if (decodedToken.username) {
       return next();
     } else {
-      return res.status(401).json({
-        message: 'Unauthorized to Post Job'
-      });
+      return next();
     }
   } catch (err) {
     return next(err);

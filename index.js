@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const morgan = require('morgan');
 const APIError = require('./APIError');
-
+process.env.NODE_ENV = 'development';
 //const key = 'dsadsa';
 
 const { SECRET_KEY } = require('./config');
@@ -77,23 +77,22 @@ app.use('/jobs', jobsRoutes);
 //   }
 // });
 
-app.use((req, res, next) => {
-  var err = new Error('Not Found');
-  err.status = 404;
-  return next(err);
-});
+// app.use((req, res, next) => {
+//   var err = new Error('Not Found');
+//   err.status = 404;
+//   return next(err);
+// });
 
-if (app.get('env') === 'development') {
-  app.use((err, req, res, next) => {
-    res.status(err.status || 500);
-    return res.json({
-      message: err.message,
-      error: err
-    });
-  });
-}
+// if (app.get('env') === 'development') {
+//   app.use((err, req, res, next) => {
+//     res.status(err.status || 500);
+//     return res.json({
+//       message: err.message,
+//       error: err
+//     });
+//   });
+// }
 
-// at the bottom of index.js (app file), use this global error handler
 app.use((error, request, response, next) => {
   // format built-in errors
   if (!(error instanceof APIError)) {

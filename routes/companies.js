@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const APIError = require('../APIError');
 const SECRET_KEY = 'coolsecretkey';
 const {
   ensureCorrectUser,
@@ -14,6 +15,15 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
     const data = await db.query('SELECT * FROM companies');
     for (let i = 0; i < data.rows.length; i++) {
+      const users = await db.query(
+        'SELECT * FROM users WHERE current_company=$1',
+        [data.rows[i].handle]
+      );
+      const jobs = await db.query('SELECT * FROM jobs WHERE company=$1', [
+        data.rows[i].handle
+      ]);
+      data.rows[i].employees = users.rows.map(v => v.username);
+      data.rows[i].jobs = jobs.rows.map(v => v.id);
       delete data.rows[i].password;
     }
     return res.json(data.rows);
@@ -52,15 +62,15 @@ router.get('/:handle', ensureLoggedIn, async (req, res, next) => {
       'SELECT * FROM companies WHERE handle=$1 LIMIT 1',
       [req.params.handle]
     );
-    // const users = await db.query(
-    //   'SELECT * FROM users WHERE current_company_id=$1',
-    //   [req.params.id]
-    // );
-    // const jobs = await db.query('SELECT * FROM jobs WHERE company_id=$1', [
-    //   req.params.id
-    // ]);
-    // company.rows[0].users = users.rows;
-    // company.rows[0].jobs = jobs.rows;
+    const users = await db.query(
+      'SELECT * FROM users WHERE current_company=$1',
+      [req.params.handle]
+    );
+    const jobs = await db.query('SELECT * FROM jobs WHERE company=$1', [
+      req.params.handle
+    ]);
+    company.rows[0].employees = users.rows.map(v => v.username);
+    company.rows[0].jobs = jobs.rows.map(v => v.id);
 
     delete company.rows[0].password;
     return res.json(company.rows[0]);
@@ -74,7 +84,7 @@ router.patch('/:handle', ensureCorrectCompany, async (req, res, next) => {
     if (req.body.password.length > 55)
       return next(new Error('Password is too long'));
     const hashedPass = await bcrypt.hash(req.body.password, 10);
-    const data = await db.query(
+    const company = await db.query(
       'UPDATE companies SET name=($1), logo=($2), handle=($3), password=($4), email=($5) WHERE handle=($3) RETURNING *',
       [
         req.body.name,
@@ -84,8 +94,17 @@ router.patch('/:handle', ensureCorrectCompany, async (req, res, next) => {
         req.body.email
       ]
     );
-    data.rows[0].password = req.body.password;
-    return res.json(data.rows[0]);
+    company.rows[0].password = req.body.password;
+    const users = await db.query(
+      'SELECT * FROM users WHERE current_company=$1',
+      [req.params.handle]
+    );
+    const jobs = await db.query('SELECT * FROM jobs WHERE company=$1', [
+      req.params.handle
+    ]);
+    company.rows[0].employees = users.rows.map(v => v.username);
+    company.rows[0].jobs = jobs.rows.map(v => v.id);
+    return res.json(company.rows[0]);
   } catch (err) {
     return next(err);
   }
@@ -93,16 +112,21 @@ router.patch('/:handle', ensureCorrectCompany, async (req, res, next) => {
 
 router.delete('/:handle', ensureCorrectCompany, async (req, res, next) => {
   try {
-    const data = await db.query(
+    const company = await db.query(
       'DELETE FROM companies WHERE handle=$1 RETURNING *',
       [req.params.handle]
     );
-
-    return res.status(200).json({
-      status: 200,
-      title: 'Success',
-      message: 'The operation was successful.'
-    });
+    company.rows[0].password = req.body.password;
+    const users = await db.query(
+      'SELECT * FROM users WHERE current_company=$1',
+      [req.params.handle]
+    );
+    const jobs = await db.query('SELECT * FROM jobs WHERE company=$1', [
+      req.params.handle
+    ]);
+    company.rows[0].employees = users.rows.map(v => v.username);
+    company.rows[0].jobs = jobs.rows.map(v => v.id);
+    return res.json(company.rows[0]);
   } catch (err) {
     return next(err);
   }

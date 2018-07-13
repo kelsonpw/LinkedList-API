@@ -4,6 +4,7 @@ const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const SECRET_KEY = 'coolsecretkey';
+const APIError = require('../APIError');
 const { ensureCorrectUser, ensureLoggedIn } = require('../middleware');
 // const { applications } = require('../functions');
 
@@ -109,7 +110,7 @@ router.delete('/:username', ensureCorrectUser, async (req, res, next) => {
       'DELETE FROM users WHERE username=$1 RETURNING *',
       [req.params.username]
     );
-    console.log(data)
+    console.log(data);
     const jobs = await db.query('SELECT * FROM jobs_users WHERE user_id=$1', [
       data.rows[0].id
     ]);

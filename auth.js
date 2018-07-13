@@ -1,6 +1,7 @@
 const db = require('./db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const APIError = require('./APIError');
 const { SECRET_KEY } = require('./config');
 
 //const key = require('./index')

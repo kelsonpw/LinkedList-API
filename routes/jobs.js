@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const APIError = require('../APIError.js');
 const SECRET_KEY = 'coolsecretkey';
 const {
   ensureCorrectUser,
@@ -16,7 +17,6 @@ const {
 router.get('/', ensureLoggedIn, async (req, res, next) => {
   try {
     const data = await db.query('SELECT * FROM jobs LIMIT 50');
-    console.log(data);
     return res.json(data.rows);
   } catch (err) {
     return next(err);
@@ -112,7 +112,13 @@ router.post(
         });
       }
     } catch (err) {
-      return next(err);
+      return next(
+        new APIError(
+          401,
+          'Unauthorized',
+          'You need to authenticate before accessing this resource.'
+        )
+      );
     }
   }
 );
@@ -127,12 +133,18 @@ router.delete('/:id/apply', ensureIfApplied, async (req, res, next) => {
       );
       return res.json({ message: 'Successfully deleted a job application' });
     } else {
-      return res.json({
-        message: 'You need to authenticate before accessing this resource.'
-      });
+      return next(
+        new APIError(404, 'Not Found', 'Record with that ID was not found.')
+      );
     }
   } catch (err) {
-    return next(err);
+    return next(
+      new APIError(
+        401,
+        'Unauthorized',
+        'You need to authenticate before accessing this resource.'
+      )
+    );
   }
 });
 
