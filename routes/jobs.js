@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { validate } = require('jsonschema');
 const APIError = require('../APIError.js');
 const SECRET_KEY = 'coolsecretkey';
 const {
