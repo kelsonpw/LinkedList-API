@@ -4,6 +4,8 @@ const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const APIError = require('../APIError');
+const companySchema = require('../companySchema');
+const { validate } = require('jsonschema');
 const SECRET_KEY = 'coolsecretkey';
 const {
   ensureCorrectUser,
@@ -33,9 +35,21 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
 });
 
 router.post('/', async (req, res, next) => {
+  const result = validate(req.body, companySchema);
+  console.log(result);
+  if (!result.valid) {
+    return next(
+      new APIError(
+        400,
+        'You made an error creating a company:',
+        result.errors.map(e => e.stack).join('. ')
+      )
+    );
+  }
+
   try {
-    if (req.body.password.length > 55)
-      return next(new Error('Password is too long'));
+    // if (req.body.password.length > 55)
+    //   return next(new Error('Password is too long'));
     const hashedPass = await bcrypt.hash(req.body.password, 10);
     const data = await db.query(
       'INSERT INTO companies (name, email, handle, password, logo) VALUES ($1,$2,$3,$4,$5) RETURNING *',
@@ -50,9 +64,15 @@ router.post('/', async (req, res, next) => {
     data.rows[0].password = req.body.password;
     return res.json(data.rows[0]);
   } catch (err) {
-    if (err.code === '23505')
-      return next(`The handle and email must not be takens`);
-    return next(err);
+    console.log('err', err, 'status', err.status);
+
+    if (err.code === '23505') {
+      return next(
+        new APIError(400, 'The company cannot be created', err.detail)
+      );
+    } else {
+      return next(err);
+    }
   }
 });
 
@@ -80,9 +100,21 @@ router.get('/:handle', ensureLoggedIn, async (req, res, next) => {
 });
 
 router.patch('/:handle', ensureCorrectCompany, async (req, res, next) => {
+  const result = validate(req.body, companySchema);
+  console.log(result);
+  if (!result.valid) {
+    return next(
+      new APIError(
+        400,
+        'You made an error patching the company:',
+        result.errors.map(e => e.stack).join('. ')
+      )
+    );
+  }
+
   try {
-    if (req.body.password.length > 55)
-      return next(new Error('Password is too long'));
+    // if (req.body.password.length > 55)
+    //   return next(new Error('Password is too long'));
     const hashedPass = await bcrypt.hash(req.body.password, 10);
     const company = await db.query(
       'UPDATE companies SET name=($1), logo=($2), handle=($3), password=($4), email=($5) WHERE handle=($3) RETURNING *',
@@ -106,7 +138,13 @@ router.patch('/:handle', ensureCorrectCompany, async (req, res, next) => {
     company.rows[0].jobs = jobs.rows.map(v => v.id);
     return res.json(company.rows[0]);
   } catch (err) {
-    return next(err);
+    if (err.code === '23505') {
+      return next(
+        new APIError(400, 'The company cannot be created', err.detail)
+      );
+    } else {
+      return next(err);
+    }
   }
 });
 

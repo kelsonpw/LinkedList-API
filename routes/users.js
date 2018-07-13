@@ -28,19 +28,19 @@ router.get('/', ensureLoggedIn, async (req, res, next) => {
 });
 
 router.post('/', async (req, res, next) => {
-  try {
-    const result = validate(req.body, userSchema);
-    console.log(result);
-    if (!result.valid) {
-      return next(
-        new APIError(
-          400,
-          'You made an error:',
-          result.errors.map(e => e.stack).join('. ')
-        )
-      );
-    }
+  const result = validate(req.body, userSchema);
+  console.log(result);
+  if (!result.valid) {
+    return next(
+      new APIError(
+        400,
+        'You made an error:',
+        result.errors.map(e => e.stack).join('. ')
+      )
+    );
+  }
 
+  try {
     const hashedPass = await bcrypt.hash(req.body.password, 10);
     const company = await db.query(
       'SELECT * FROM companies WHERE handle=$1 LIMIT 1',
@@ -63,9 +63,11 @@ router.post('/', async (req, res, next) => {
     delete data.rows[0].password;
     return res.json(data.rows[0]);
   } catch (err) {
-    if (err.code === '23505')
-      return next(`The username ${req.body.username} already exists.`);
-    return next(err);
+    if (err.code === '23505') {
+      return next(new APIError(400, 'The user cannot be created', err.detail));
+    } else {
+      return next(err);
+    }
   }
 });
 
@@ -87,6 +89,17 @@ router.get('/:username', ensureLoggedIn, async (req, res, next) => {
 });
 
 router.patch('/:username', ensureCorrectUser, async (req, res, next) => {
+  const result = validate(req.body, userSchema);
+  console.log(result);
+  if (!result.valid) {
+    return next(
+      new APIError(
+        400,
+        'You made an error modifying the user:',
+        result.errors.map(e => e.stack).join('. ')
+      )
+    );
+  }
   try {
     if (req.body.password.length > 55)
       return next(new Error('Password is too long'));
@@ -112,7 +125,11 @@ router.patch('/:username', ensureCorrectUser, async (req, res, next) => {
     data.rows[0].password = req.body.password;
     return res.json(data.rows[0]);
   } catch (err) {
-    return next(err);
+    if (err.code === '23505') {
+      return next(new APIError(400, 'The user cannot be patched', err.detail));
+    } else {
+      return next(err);
+    }
   }
 });
 
