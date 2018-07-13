@@ -148,7 +148,7 @@ router.delete('/:username', ensureCorrectUser, async (req, res, next) => {
     delete data.rows[0].password;
     return res.json(data.rows[0]);
   } catch (err) {
-    return next(err);
+    return next(new APIError(404, 'This is not a valid user', 'Please login.'));
   }
 });
 
