@@ -280,6 +280,9 @@ describe('POST /jobs/:id/apply', () => {
         .delete(`/jobs/${jobId}/apply`)
         .set('authorization', auth.token);
       expect(secondDelete.statusCode).toBe(404);
+      expect(secondDelete.body.message).toBe(
+        'Record with that ID was not found.'
+      );
     });
   });
 });
