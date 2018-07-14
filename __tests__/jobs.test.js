@@ -215,3 +215,71 @@ describe('DELETE /jobs/:id', () => {
     //console.log(secondDelete.body);
   });
 });
+
+describe('POST /jobs/:id/apply', () => {
+  test('the user successfully applies for the job.', async () => {
+    const decodedToken = jwt.verify(auth.token, SECRET_KEY);
+    const userUsername = decodedToken.username;
+    const userId = (await db.query(
+      'SELECT * FROM users WHERE username=$1 LIMIT 1',
+      [userUsername]
+    )).rows[0].id;
+    const jobId = (await db.query('SELECT * FROM jobs LIMIT 1')).rows[0].id;
+
+    const appData = await request(app)
+      .post(`/jobs/${jobId}/apply`)
+      .set('authorization', auth.token);
+    expect(appData.body.message).toBe('Successfully applied for job');
+    expect(appData.statusCode).toBe(200);
+    const appDb = await db.query(
+      'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2',
+      [jobId, userId]
+    );
+    expect(appDb.rows.length).toBe(1);
+    const secondApp = await request(app)
+      .post(`/jobs/${jobId}/apply`)
+      .set('authorization', auth.token);
+    expect(secondApp.body.message).toBe(
+      'You have already applied for this job.'
+    );
+    expect(secondApp.statusCode).toBe(200);
+    const appDbRetry = await db.query(
+      'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2',
+      [jobId, userId]
+    );
+    expect(appDbRetry.rows.length).toBe(1);
+  });
+
+  describe('DELETE /jobs/:id/apply', () => {
+    test('the user successfully cancelled for the job application.', async () => {
+      const decodedToken = jwt.verify(auth.token, SECRET_KEY);
+      const userUsername = decodedToken.username;
+      const userId = (await db.query(
+        'SELECT * FROM users WHERE username=$1 LIMIT 1',
+        [userUsername]
+      )).rows[0].id;
+      const jobId = (await db.query('SELECT * FROM jobs LIMIT 1')).rows[0].id;
+      const appData = await request(app)
+        .post(`/jobs/${jobId}/apply`)
+        .set('authorization', auth.token);
+      expect(appData.body.message).toBe('Successfully applied for job');
+      expect(appData.statusCode).toBe(200);
+      const deleteData = await request(app)
+        .delete(`/jobs/${jobId}/apply`)
+        .set('authorization', auth.token);
+      expect(deleteData.body.message).toBe(
+        'Successfully deleted a job application'
+      );
+      expect(deleteData.statusCode).toBe(200);
+      const appQuery = await db.query(
+        'SELECT * FROM jobs_users WHERE job_id=$1 AND user_id=$2',
+        [jobId, userId]
+      );
+      expect(appQuery.rows.length).toBe(0);
+      const secondDelete = await request(app)
+        .delete(`/jobs/${jobId}/apply`)
+        .set('authorization', auth.token);
+      expect(secondDelete.statusCode).toBe(404);
+    });
+  });
+});
