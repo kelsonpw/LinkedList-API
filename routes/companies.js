@@ -4,7 +4,7 @@ const db = require('../db/index');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const APIError = require('../APIError');
-const companySchema = require('../companySchema');
+const companySchema = require('../schemas/companySchema');
 const { validate } = require('jsonschema');
 const { SECRET_KEY } = require('../config');
 const {

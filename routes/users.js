@@ -7,7 +7,7 @@ const { SECRET_KEY } = require('../config');
 const APIError = require('../APIError');
 const { ensureCorrectUser, ensureLoggedIn } = require('../middleware');
 const { validate } = require('jsonschema');
-const userSchema = require('../userSchema.json');
+const userSchema = require('../schemas/userSchema.json');
 // const { applications } = require('../functions');
 
 router.get('/', ensureLoggedIn, async (req, res, next) => {
